@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="map2d-3.0.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.amap.api/map2d/3.0.0/ba5fb24f5837bf242c70706c471049ec9f080fb2/map2d-3.0.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.amap.api/map2d/3.0.0/cf16870c820dd8bfebd43a19a8c4496da599c35a/map2d-3.0.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

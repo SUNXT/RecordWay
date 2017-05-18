@@ -41,5 +41,7 @@ dependencies {
     compile 'com.github.Yalantis:GuillotineMenu-Android:1.2'
     compile 'com.jakewharton:butterknife:8.0.1'
     apt 'com.jakewharton:butterknife-compiler:8.0.1'
+    compile 'com.amap.api:map2d:latest.integration'
+    compile 'com.amap.api:location:latest.integration'
 
 }
