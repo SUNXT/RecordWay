@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/guillotine_background">
+
+    <android.support.v7.widget.Toolbar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/guillotine_background">
+
+        <ImageView
+            android:id="@+id/iv_menu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_menu"/>
+    </android.support.v7.widget.Toolbar>
+
+    <LinearLayout
+        android:id="@+id/line_menu_mine"
+        android:layout_marginTop="50dp"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/menu_item_height"
+        android:orientation="horizontal"
+        android:layout_marginLeft="@dimen/menu_item_margin_left">
+        <ImageView
+            android:id="@+id/menu_mine_img"
+            android:src="@drawable/menu_mine_img_selector"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/menu_item_img_height"
+            android:layout_gravity="center_vertical"/>
+        <TextView
+            android:id="@+id/tv_menu_mine"
+            style="@style/menu_item_text"
+            android:text="@string/mine" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/line_menu_map"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/menu_item_height"
+        android:orientation="horizontal"
+        android:layout_marginLeft="@dimen/menu_item_margin_left">
+        <ImageView
+            android:id="@+id/menu_map_img"
+            android:src="@drawable/menu_map_img_selector"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/menu_item_img_height"
+            android:layout_gravity="center_vertical"/>
+        <TextView
+            android:id="@+id/tv_menu_map"
+            style="@style/menu_item_text"
+            android:text="@string/map"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/line_menu_record"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/menu_item_height"
+        android:orientation="horizontal"
+        android:layout_marginLeft="@dimen/menu_item_margin_left">
+        <ImageView
+            android:id="@+id/menu_record_img"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/menu_item_img_height"
+            android:src="@drawable/menu_record_img_selector"
+            android:layout_gravity="center_vertical"/>
+        <TextView
+            android:id="@+id/tv_menu_record"
+            style="@style/menu_item_text"
+            android:text="@string/record"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/line_menu_setting"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/menu_item_height"
+        android:orientation="horizontal"
+        android:layout_marginLeft="@dimen/menu_item_margin_left">
+        <ImageView
+            android:id="@+id/menu_setting_img"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/menu_item_img_height"
+            android:src="@drawable/menu_setting_img_selector"
+            android:layout_gravity="center_vertical"/>
+        <TextView
+            android:id="@+id/tv_menu_setting"
+            style="@style/menu_item_text"
+            android:text="@string/setting"/>
+    </LinearLayout>
+
+</LinearLayout>

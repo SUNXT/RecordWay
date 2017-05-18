@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">RecordWay</string>
+
+    <string name="mine">个人中心</string>
+    <string name="map">地图</string>
+    <string name="record">记录</string>
+    <string name="setting">设置</string>
 </resources>
