@@ -29,6 +29,22 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    signingConfigs {
+        //调试版的keystore
+        debug {
+            storeFile file("./record_way.jks")
+            storePassword "sunxuedian"
+            keyAlias "record_way"
+            keyPassword "sunxuedian"
+        }
+        //发布版的keystore
+        release {
+            storeFile file("./record_way.jks")
+            storePassword "sunxuedian"
+            keyAlias "record_way"
+            keyPassword "sunxuedian"
+        }
+    }
 }
 
 dependencies {
@@ -41,7 +57,7 @@ dependencies {
     compile 'com.github.Yalantis:GuillotineMenu-Android:1.2'
     compile 'com.jakewharton:butterknife:8.0.1'
     apt 'com.jakewharton:butterknife-compiler:8.0.1'
+    compile 'com.amap.api:3dmap:5.1.0'
     compile 'com.amap.api:map2d:latest.integration'
     compile 'com.amap.api:location:latest.integration'
-
 }

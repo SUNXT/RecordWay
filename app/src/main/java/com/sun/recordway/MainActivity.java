@@ -1,6 +1,8 @@
 package com.sun.recordway;
 
-import android.content.Intent;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
@@ -12,8 +14,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 
-import com.amap.api.maps2d.AMap;
-import com.amap.api.maps2d.MapView;
+import com.sun.recordway.fragment.MapFragment;
+import com.sun.recordway.fragment.MineFragment;
+import com.sun.recordway.fragment.RecordFragment;
+import com.sun.recordway.fragment.SettingFragment;
 import com.yalantis.guillotine.animation.GuillotineAnimation;
 
 import butterknife.BindView;
@@ -31,8 +35,6 @@ public class MainActivity extends AppCompatActivity {
     FrameLayout root;
     @BindView(R.id.tv_title)
     TextView tv_title;
-    @BindView(R.id.map)
-    MapView  mMapView;
 
     private LinearLayout line_menu_mine;
     private LinearLayout line_menu_map;
@@ -46,9 +48,15 @@ public class MainActivity extends AppCompatActivity {
     private TextView  tv_menu_mine;
     private TextView  tv_menu_map;
     private TextView  tv_menu_record;
-    private TextView  tv_menu_seeting;
+    private TextView tv_menu_setting;
+
+    private MineFragment mMineFragment;
+    private MapFragment mMapFragment;
+    private RecordFragment mRecordFragment;
+    private SettingFragment mSettingFragment;
 
     private GuillotineAnimation guillotineAnimation;
+
 
 
     @Override
@@ -57,14 +65,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         initView();
-        //在activity执行onCreate时执行mMapView.onCreate(savedInstanceState)，创建地图
-        mMapView.onCreate(savedInstanceState);
-        //初始化地图控制器对象
-        AMap aMap = null;
-
-        if (aMap == null) {
-            aMap = mMapView.getMap();
-        }
     }
 
     private void initView(){
@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         tv_menu_mine = (TextView) guillotineMenu.findViewById(R.id.tv_menu_mine);
         tv_menu_map = (TextView) guillotineMenu.findViewById(R.id.tv_menu_map);
         tv_menu_record = (TextView) guillotineMenu.findViewById(R.id.tv_menu_record);
-        tv_menu_seeting = (TextView) guillotineMenu.findViewById(R.id.tv_menu_setting);
+        tv_menu_setting = (TextView) guillotineMenu.findViewById(R.id.tv_menu_setting);
 
         iv_menu_map.setSelected(true);
         tv_menu_map.setSelected(true);
@@ -126,58 +126,94 @@ public class MainActivity extends AppCompatActivity {
                 onClickMenuOfSetting();
             }
         });
+
+        mMapFragment = new MapFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.add(R.id.fragment, mMapFragment);
+        transaction.commit();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        //在activity执行onResume时执行mMapView.onResume ()，重新绘制加载地图
-        mMapView.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        //在activity执行onPause时执行mMapView.onPause ()，暂停地图的绘制
-        mMapView.onPause();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        //在activity执行onDestroy时执行mMapView.onDestroy()，销毁地图
-        mMapView.onDestroy();
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        //在activity执行onSaveInstanceState时执行mMapView.onSaveInstanceState (outState)，保存地图当前的状态
-        mMapView.onSaveInstanceState(outState);
+    private void hideAllFragment(){
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        if (mMineFragment != null){
+            transaction.hide(mMineFragment);
+        }
+        if (mMapFragment != null){
+            transaction.hide(mMapFragment);
+        }
+        if (mRecordFragment != null){
+            transaction.hide(mRecordFragment);
+        }
+        if (mSettingFragment != null){
+            transaction.hide(mSettingFragment);
+        }
+        transaction.commit();
     }
 
     private void onClickMenuOfMine(){
         setMenuItemSelected(R.id.line_menu_mine);
         tv_title.setText(R.string.mine);
         guillotineAnimation.close();
+
+        hideAllFragment();
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        if (mMineFragment == null){
+            mMineFragment = new MineFragment();
+            transaction.add(R.id.fragment, mMineFragment);
+        }else {
+            transaction.show(mMineFragment);
+        }
+        transaction.commit();
+
     }
 
     private void onClickMenuOfMap(){
         setMenuItemSelected(R.id.line_menu_map);
         tv_title.setText(R.string.map);
         guillotineAnimation.close();
+
+        hideAllFragment();
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        if (mMapFragment == null){
+            mMapFragment = new MapFragment();
+            transaction.add(R.id.fragment, mMapFragment);
+        }else {
+            transaction.show(mMapFragment);
+        }
+        transaction.commit();
     }
 
     private void onClickMenuOfRecord(){
         setMenuItemSelected(R.id.line_menu_record);
         tv_title.setText(R.string.record);
         guillotineAnimation.close();
+
+        hideAllFragment();
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        if (mRecordFragment == null){
+            mRecordFragment = new RecordFragment();
+            transaction.add(R.id.fragment, mRecordFragment);
+        }else {
+            transaction.show(mRecordFragment);
+        }
+        transaction.commit();
     }
 
     private void onClickMenuOfSetting(){
         setMenuItemSelected(R.id.line_menu_setting);
         tv_title.setText(R.string.setting);
         guillotineAnimation.close();
+
+        hideAllFragment();
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        if (mSettingFragment == null){
+            mSettingFragment = new SettingFragment();
+            transaction.add(R.id.fragment, mSettingFragment);
+        }else {
+            transaction.show(mSettingFragment);
+        }
+        transaction.commit();
     }
 
     private void setMenuItemSelected(int lineId){
@@ -188,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
         tv_menu_mine.setSelected(false);
         tv_menu_map.setSelected(false);
         tv_menu_record.setSelected(false);
-        tv_menu_seeting.setSelected(false);
+        tv_menu_setting.setSelected(false);
         switch (lineId){
             case R.id.line_menu_mine:
                 iv_menu_mine.setSelected(true);
@@ -204,7 +240,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
             case R.id.line_menu_setting:
                 iv_menu_setting.setSelected(true);
-                tv_menu_seeting.setSelected(true);
+                tv_menu_setting.setSelected(true);
                 break;
         }
     }

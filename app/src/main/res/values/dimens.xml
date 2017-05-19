@@ -10,5 +10,5 @@
     <dimen name="menu_item_height">50dp</dimen>
     <dimen name="menu_item_margin_left">120dp</dimen>
     <dimen name="menu_item_text_size">18sp</dimen>
-
+    <dimen name="map_bottom_bar_height">100dp</dimen>
 </resources>
