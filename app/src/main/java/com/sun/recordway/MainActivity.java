@@ -3,9 +3,11 @@ package com.sun.recordway;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -92,9 +94,6 @@ public class MainActivity extends AppCompatActivity {
         tv_menu_record = (TextView) guillotineMenu.findViewById(R.id.tv_menu_record);
         tv_menu_setting = (TextView) guillotineMenu.findViewById(R.id.tv_menu_setting);
 
-        iv_menu_map.setSelected(true);
-        tv_menu_map.setSelected(true);
-
         line_menu_mine = (LinearLayout) guillotineMenu.findViewById(R.id.line_menu_mine);
         line_menu_mine.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -127,11 +126,29 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mMapFragment = new MapFragment();
-        FragmentManager fragmentManager = getFragmentManager();
-        FragmentTransaction transaction = fragmentManager.beginTransaction();
-        transaction.add(R.id.fragment, mMapFragment);
-        transaction.commit();
+        Intent data = getIntent();
+        boolean isShowRecordList = false;
+        if (data != null){
+            isShowRecordList = data.getBooleanExtra("isShowRecordList", false);
+        }
+        if (isShowRecordList){
+            iv_menu_record.setSelected(true);
+            tv_menu_record.setSelected(true);
+            mRecordFragment = new RecordFragment();
+            FragmentManager fragmentManager = getFragmentManager();
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            transaction.add(R.id.fragment, mRecordFragment);
+            transaction.commit();
+        }else {
+            iv_menu_map.setSelected(true);
+            tv_menu_map.setSelected(true);
+            mMapFragment = new MapFragment();
+            FragmentManager fragmentManager = getFragmentManager();
+            FragmentTransaction transaction = fragmentManager.beginTransaction();
+            transaction.add(R.id.fragment, mMapFragment);
+            transaction.commit();
+        }
+
     }
 
     private void hideAllFragment(){

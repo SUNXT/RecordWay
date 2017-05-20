@@ -5,12 +5,13 @@
         android:id="@+id/map"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/rl_bottom_action_bar"/>
-    <RelativeLayout
-        android:id="@+id/rl_bottom_action_bar"
+        />
+    <ImageView
+        android:id="@+id/iv_map_recode"
+        android:layout_width="@dimen/btn_map_record_size"
+        android:layout_height="@dimen/btn_map_record_size"
+        android:src="@drawable/bg_btn_record_selector"
         android:layout_alignParentBottom="true"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/map_bottom_bar_height">
-
-    </RelativeLayout>
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="@dimen/btn_map_record_margin_bottom"/>
 </RelativeLayout>

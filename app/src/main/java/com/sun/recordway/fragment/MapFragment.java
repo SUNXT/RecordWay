@@ -1,23 +1,37 @@
 package com.sun.recordway.fragment;
 
+import android.Manifest;
 import android.app.Fragment;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.ContentObserver;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.GpsStatus;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.amap.api.location.AMapLocation;
 import com.amap.api.location.AMapLocationClient;
 import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationListener;
 import com.amap.api.maps2d.AMap;
+import com.amap.api.maps2d.AMapUtils;
 import com.amap.api.maps2d.CameraUpdateFactory;
 import com.amap.api.maps2d.LocationSource;
 import com.amap.api.maps2d.MapView;
@@ -27,12 +41,13 @@ import com.amap.api.maps2d.model.LatLng;
 import com.amap.api.maps2d.model.MyLocationStyle;
 import com.amap.api.maps2d.model.Polyline;
 import com.amap.api.maps2d.model.PolylineOptions;
-import com.amap.api.trace.LBSTraceClient;
-import com.amap.api.trace.TraceListener;
-import com.amap.api.trace.TraceLocation;
 import com.sun.recordway.R;
+import com.sun.recordway.ShowRecordActivity;
+import com.sun.recordway.bean.RecordBean;
+import com.sun.recordway.database.Database;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import static android.content.Context.SENSOR_SERVICE;
@@ -44,20 +59,30 @@ import static android.content.Context.SENSOR_SERVICE;
 public class MapFragment extends Fragment implements LocationSource, AMapLocationListener, SensorEventListener {
 
     private String tag = getClass().getSimpleName();
+    private final int OPEN_GPS = 0;
 
+    private ImageView iv_map_record;
     private MapView mMapView;
     private AMap aMap;
     private UiSettings mUiSettings;
 
+    /**
+     * 定位
+     */
     private AMapLocationClient mLocationClient;
     private AMapLocationClientOption mLocationOption;
     private OnLocationChangedListener mListener;
-    private boolean isFirstLoc = true;
 
+    /**
+     * 传感器
+     */
     private SensorManager mSensorManager;
     private Sensor mSensor;
     private Sensor aSensor;
 
+    /**
+     * 记录重力感应的一些数据
+     */
     float[] accelerometerValues = new float[3];
     float[] magneticFieldValues = new float[3];
     float[] values = new float[3];
@@ -65,16 +90,51 @@ public class MapFragment extends Fragment implements LocationSource, AMapLocatio
     float floats;
     float[] R2 = new float[9];
 
+    /**
+     * 地图上画线相关
+     */
+    private PolylineOptions mPolylineOptions;
+    private Polyline mPolyline;
     private List<LatLng> latLngs = new ArrayList<LatLng>();
     private int pointCount = 0;
+    private boolean isRecord = false;//是否处于记录状态
+    private boolean isGPSConnected = false;//判断GPS是否已经定位成功
+    private boolean isFirstRecord = true;
+
+    private long startTime;
+    private long endTime;
+
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_map, container, false);
-        initMap(view, savedInstanceState);
+        initView(view, savedInstanceState);
         initSensor();
+        addGpsStatusListener();
+        initPolylineOption();
         return view;
+    }
+
+    /**
+     * 初始化View
+     * @param view
+     * @param savedInstanceState
+     */
+    private void initView(View view, Bundle savedInstanceState){
+        initMap(view, savedInstanceState);
+
+        iv_map_record = (ImageView) view.findViewById(R.id.iv_map_recode);
+        iv_map_record.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (iv_map_record.isSelected()){
+                    endRecord();
+                }else {
+                    startRecord();
+                }
+            }
+        });
     }
 
 
@@ -99,13 +159,20 @@ public class MapFragment extends Fragment implements LocationSource, AMapLocatio
         mUiSettings.setScaleControlsEnabled(true);
         mUiSettings.setAllGesturesEnabled(true);
 
+        initMapLocationIcon();
+        aMap.moveCamera(CameraUpdateFactory.zoomTo(17));
+    }
+
+    /**
+     * 初始化定位图标
+     */
+    private void initMapLocationIcon(){
         MyLocationStyle myLocationStyle = new MyLocationStyle();
         myLocationStyle.myLocationIcon(BitmapDescriptorFactory.fromResource(R.drawable.location_80));// 设置小蓝点的图标
         myLocationStyle.radiusFillColor(0);
         myLocationStyle.strokeColor(0);
         myLocationStyle.strokeWidth(0);
         aMap.setMyLocationStyle(myLocationStyle);//设置定位图标样式
-        aMap.moveCamera(CameraUpdateFactory.zoomTo(17));
     }
 
     /**
@@ -229,8 +296,6 @@ public class MapFragment extends Fragment implements LocationSource, AMapLocatio
 //                aMapLocation.getCityCode();//城市编码
 //                aMapLocation.getAdCode();//地区编码
 
-                // 如果不设置标志位，此时再拖动地图时，它会不断将地图移动到当前的位置
-                if (isFirstLoc) {
                     //设置缩放级别
 //                    aMap.moveCamera(CameraUpdateFactory.zoomTo(17));
                     //将地图移动到定位点
@@ -247,14 +312,31 @@ public class MapFragment extends Fragment implements LocationSource, AMapLocatio
                             + aMapLocation.getStreet() + ""
                             + aMapLocation.getStreetNum());
                     Log.d(tag, buffer.toString());
-//                    isFirstLoc = false;
+
+                //再打开GPS和已经定位好开始记录路径
+//                if (iv_map_record.isSelected())
+//                Toast.makeText(getActivity(), "isRecord:" + isRecord + " isGPSConnected:" + isGPSConnected, Toast.LENGTH_SHORT).show();
+                if (isFirstRecord){
+                    if (isRecord && isGPSConnected){
+                        LatLng latLng = new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude());
+                        latLngs.add(pointCount, latLng);
+                        mPolylineOptions.add(latLng);
+                        pointCount ++;
+//                        Toast.makeText(getActivity(), "符合画的要求", Toast.LENGTH_SHORT).show();
+                        drawPolyline();
+                    }
+                }else {
+                    Log.d(tag, "isRecord: " + isRecord);
+                    if (isRecord){
+                        LatLng latLng = new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude());
+                        latLngs.add(pointCount, latLng);
+                        mPolylineOptions.add(latLng);
+                        pointCount ++;
+//                        Toast.makeText(getActivity(), "符合画的要求", Toast.LENGTH_SHORT).show();
+                        drawPolyline();
+                    }
                 }
 
-                latLngs.add(pointCount, new LatLng(aMapLocation.getLatitude(), aMapLocation.getLongitude()));
-                Polyline polyline = aMap.addPolyline(new PolylineOptions().
-                        addAll(latLngs).width(10).color(Color.argb(255, 18, 150, 219)));
-                polyline.setVisible(true);
-                pointCount ++;
 
             } else {
                 //显示错误信息ErrCode是错误码，errInfo是错误信息，详见错误码表。
@@ -305,5 +387,190 @@ public class MapFragment extends Fragment implements LocationSource, AMapLocatio
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+    }
+
+    /**
+     * 监听GPS的状态
+     */
+    private void addGPSListener(){
+        final LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        ContentObserver mGpsMonitor = new ContentObserver(null) {
+            @Override
+            public void onChange(boolean selfChange) {
+                super.onChange(selfChange);
+                if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+//                    iv_map_record.setSelected(false);
+                    isRecord = false;
+//                    isGPSConnected = false;
+//                    showOpenGpsDialog();
+                }else {
+                    addGpsStatusListener();
+                }
+            }
+        };
+        getActivity().getContentResolver()
+                .registerContentObserver(
+                        Settings.Secure
+                                .getUriFor(Settings.System.LOCATION_PROVIDERS_ALLOWED),
+                        false, mGpsMonitor);
+    }
+
+    /**
+     * 监听GPS是否已经定位
+     */
+    private void addGpsStatusListener(){
+        final LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        GpsStatus.Listener statusListener = new GpsStatus.Listener() {
+            public void onGpsStatusChanged(int event) {
+                GpsStatus gpsStatus = locationManager.getGpsStatus(null);
+                //Utils.DisplayToastShort(GPSService.this, "GPS status listener  ");
+                switch (event) {
+                    case GpsStatus.GPS_EVENT_FIRST_FIX:
+                        locationManager.removeGpsStatusListener(this);
+                        isGPSConnected = true;
+                        break;
+                }
+            }
+        };
+        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},2);
+        }else {
+            locationManager.addGpsStatusListener(statusListener);//侦听GPS状态
+        }
+    }
+
+    /**
+     * 开始记录
+     */
+    private void startRecord(){
+        startTime = System.currentTimeMillis();
+        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
+            isRecord = true;
+            iv_map_record.setSelected(true);
+            addGpsStatusListener();
+        }else {
+            isRecord = false;
+            showOpenGpsDialog();
+        }
+    }
+
+    /**
+     * 结束记录路径
+     */
+    private void endRecord(){
+        endTime = System.currentTimeMillis();
+        isRecord = false;
+        iv_map_record.setSelected(false);
+        isFirstRecord = false;
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setMessage("是否保存你的路径？");
+        builder.setPositiveButton("保存", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                saveRecord();
+            }
+        });
+        builder.setNegativeButton("舍弃", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.dismiss();
+                aMap.clear();
+                initMapLocationIcon();
+                initPolylineOption();
+            }
+        });
+        builder.setCancelable(false);
+        builder.show();
+    }
+
+    /**
+     * 显示让用户打开GPS的对话框
+     */
+    private void showOpenGpsDialog(){
+        //要求用户打开GPS
+        AlertDialog.Builder dialog = new AlertDialog.Builder(getActivity());
+        dialog.setMessage("为了记录更加准确，请先打开GPS");
+        dialog.setPositiveButton("确定",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface arg0, int arg1) {
+                        // 转到手机设置界面，用户设置GPS
+                        Intent intent = new Intent(
+                                Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                        startActivityForResult(intent, OPEN_GPS); // 设置完成后返回到原来的界面
+                    }
+                });
+        dialog.setNegativeButton("取消", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface arg0, int arg1) {
+                arg0.dismiss();
+            }
+        });
+        dialog.show();
+    }
+
+    /**
+     * 初始化画线参数
+     */
+    private void initPolylineOption(){
+        mPolylineOptions = new PolylineOptions();
+        mPolylineOptions.width(10);
+        mPolylineOptions.color(Color.argb(255, 18,150,219));
+        mPolyline = null;
+    }
+
+    /**
+     * 地图上画线
+     */
+    private void drawPolyline(){
+        if (mPolylineOptions.getPoints().size() > 1) {
+            if (mPolyline != null) {
+//                Toast.makeText(getActivity(), "开始记录", Toast.LENGTH_SHORT).show();
+                mPolyline.setPoints(mPolylineOptions.getPoints());
+            } else {
+//                Toast.makeText(getActivity(), "mPolyline = null", Toast.LENGTH_SHORT).show();
+                mPolyline = aMap.addPolyline(mPolylineOptions);
+            }
+        }else {
+//            Toast.makeText(getActivity(), "getPoints.size < 1", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /**
+     * 保存记录
+     */
+    private void saveRecord(){
+        float distance = 0;
+        if (latLngs.size() > 1){
+            for (int i = 0; i < latLngs.size()-1; ++ i){
+                Log.d(tag, (i+1) + latLngs.get(i).toString());
+                distance += AMapUtils.calculateLineDistance(latLngs.get(i), latLngs.get(i+1));
+            }
+            Log.d(tag, latLngs.size() + latLngs.get(latLngs.size()-1).toString());
+            Log.d(tag, "distance:"+ distance);
+        }
+        Database database = Database.getInstance(getActivity());
+        RecordBean recordBean = new RecordBean();
+        Calendar c = Calendar.getInstance();
+        StringBuilder sb = new StringBuilder();
+        sb.append(c.get(Calendar.YEAR));
+        sb.append(c.get(Calendar.MONTH));
+        sb.append(c.get(Calendar.DAY_OF_MONTH));
+        sb.append(c.get(Calendar.HOUR_OF_DAY));
+        sb.append(c.get(Calendar.MINUTE));
+        recordBean.setTitle(sb.toString());
+        recordBean.setDistance(String.valueOf(distance));
+        recordBean.setDuration((endTime-startTime) / 1000 + "秒");
+        if (database.addItem(recordBean)){
+            Toast.makeText(getActivity(), "保存成功！", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getActivity(), ShowRecordActivity.class);
+            intent.putExtra("title", recordBean.getTitle());
+            intent.putExtra("duration", recordBean.getDuration());
+            intent.putExtra("distance", recordBean.getDistance());
+            intent.putExtra("isFromMap", true);
+            startActivity(intent);
+            getActivity().finish();
+        }
     }
 }
