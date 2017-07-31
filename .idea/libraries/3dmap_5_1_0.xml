@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="3dmap-5.1.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.amap.api/3dmap/5.1.0/4d3d5fecd6494e3598b483f9e09f93d6971f3d0e/3dmap-5.1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.amap.api/3dmap/5.1.0/40f6e8e55e51c6bcd9a98f014cf03e88e18ef37e/3dmap-5.1.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
